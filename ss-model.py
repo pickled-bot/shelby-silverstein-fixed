@@ -110,12 +110,36 @@ print("MODEL SUMMARY")
 model.summary()
 
 # test by passing in a given word from vocabulary and predicting next word
-in_text = 'She'
-encoded = tokenizer.texts_to_sequences([in_text])[0]
-encoded = np.array(encoded)
-probs = model.predict(encoded, verbose=0)
-yhat = np.argmax(probs)
-for word, index in tokenizer.word_index.items():
-  if index == yhat:
-    print('in text word:', in_text)
-    print('predicted word:', word)
+# in_text = 'She'
+# encoded = tokenizer.texts_to_sequences([in_text])[0]
+# encoded = np.array(encoded)
+# probs = model.predict(encoded, verbose=0)
+# yhat = np.argmax(probs)
+# for word, index in tokenizer.word_index.items():
+#   if index == yhat:
+#     print('in text word:', in_text)
+#     print('predicted word:', word)
+
+# generate a sequence from the model
+def generate_sequence(model, tokenizer, seed_text, n_words):
+  in_text, result = seed_text, seed_text
+  # generate a fixed number of words
+  for _ in range(n_words):
+    # encode the text as integer
+    encoded = tokenizer.texts_to_sequences([in_text])[0]
+    encoded = np.array(encoded)
+    # predict a word in the vocabulary
+    probs = model.predict(encoded, verbose=0)
+    yhat = np.argmax(probs)
+    # map predicted word index to word
+    out_word = ''
+    for word, index in tokenizer.word_index.items():
+      if index == yhat:
+        out_word = word
+        break
+    # append to input
+    in_text, result = out_word, result + ' ' + out_word
+    return result
+
+# evaluate model
+print("generated sequence:", generate_sequence(model, tokenizer, 'She', 6))
