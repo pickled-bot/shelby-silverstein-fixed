@@ -50,7 +50,6 @@ encoded = tokenizer.texts_to_sequences([data])[0]
 
 #determine vocabulary size [returns 73]
 vocab_size = len(tokenizer.word_index) + 1
-print('Vocabulary Size: %d' % vocab_size)
 
 # create sequences of words to fit the model
 # with one word as input and one word as output
@@ -61,13 +60,13 @@ sequences = []
 for i in range(1, len(encoded)):
   sequence = encoded[i-1:i+1]
   sequences.append(sequence)
-print('Total Sequences: %d' % len(sequences))
 
 # split elements into input (x) and output (y)
-sequences = list(sequences)
+# use numpy array feature to split the data into input and output elements using indexing tuples
+# first element of each sequence as input, second element as output
+sequences = np.array(sequences)
 x, y = sequences[:,0],sequences[:,1]
-print("x", x, "y", y)
-print("sequences***", sequences)
+# print("Sequences:", sequences)
 # model is fitted to predict probability distribution of all words in
 # vocabulary, need to turn output element from single integer
 # into one hot encoding with a 0 for every word in the vocabulay
@@ -90,7 +89,10 @@ model = Sequential()
 model.add(Embedding(vocab_size, 10, input_length=1))
 model.add(LSTM(50))
 model.add(Dense(vocab_size, activation='softmax'))
-print(model.summary())
+
+# print each layer of model
+# for i, layer in enumerate(model.layers):
+#   print(f'Layer {i}: {layer.name}, Type: {type(layer)}, Trainable: {layer.trainable}, output shape: {layer.output_shape}')
 
 # fitting network on encoded text data
 # technically we are modeling multi-class classifcation problem
@@ -99,4 +101,21 @@ print(model.summary())
 # the model is fit for 500 training epochs, though more may be needed
 
 # compile and fit network to predict word in vocabulary
-model.compile(loss='categorical_crossentropy', optimizer='')
+model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.01), metrics=['accuracy'])
+model.fit(x, y, epochs=500, verbose=2)
+print('Vocabulary Size: %d' % vocab_size)
+print('Total Sequences: %d' % len(sequences))
+print("x", x, "y", y)
+print("MODEL SUMMARY")
+model.summary()
+
+# test by passing in a given word from vocabulary and predicting next word
+in_text = 'She'
+encoded = tokenizer.texts_to_sequences([in_text])[0]
+encoded = np.array(encoded)
+probs = model.predict(encoded, verbose=0)
+yhat = np.argmax(probs)
+for word, index in tokenizer.word_index.items():
+  if index == yhat:
+    print('in text word:', in_text)
+    print('predicted word:', word)
