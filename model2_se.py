@@ -106,6 +106,38 @@ def generate_seq(model, tokenizer, max_length, seed_text, n_words):
     in_text += ' ' + out_word
   return in_text
 
+# shannon entropy function
+def generate_seq_with_entropy(model, tokenizer, max_length, seed_text, n_words):
+  in_text = seed_text
+  entropy = 0.0
+  # generate a fixed number of words
+  for _ in range(n_words):
+    encoded = tokenizer.texts_to_sequences([in_text])[0]
+    # pre pad sequences to a fixed length
+    encoded = pad_sequences([encoded], maxlen=max_length, padding='pre')
+    # predict probabilities for each word
+    probs = model.predict(encoded, verbose=0)
+    # calculate shannon entropy of predicted probabilities
+    entropy -= sum([p * math.log(p) for p in probs[0] if p > 0])
+    yhat = np.argmax(probs)
+    # map predicted word index to word
+    out_word = ''
+    for word, index in tokenizer.word_index.items():
+      if index == yhat:
+        out_word = word
+        break
+    # append to input
+    in_text += ' ' + out_word
+  return in_text, entropy/n_words
+
+#evaluate both models
+# entropy model
+print("entropy - sequence with She:", generate_seq_with_entropy(model, tokenizer, max_length-1, 'She', 4))
+print("entropy - sequence with And:", generate_seq_with_entropy(model, tokenizer, max_length-1, 'And', 4))
+print("entropy - sequence with The:",generate_seq_with_entropy(model, tokenizer, max_length-1, 'The', 4))
+num = np.random.randint(0, len(data))
+print("entropy - sequence with rand:", generate_seq_with_entropy(model, tokenizer, max_length-1, data[num], 4))
+
 # evaluate model
 print("sequence with She:", generate_seq(model, tokenizer, max_length-1, 'She', 4))
 print("sequence with And:", generate_seq(model, tokenizer, max_length-1, 'And', 4))
